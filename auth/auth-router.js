@@ -3,7 +3,8 @@ const bcrypt = require('bcryptjs');
 const express = require('express');
 const router = express.Router();
 
-const Users = require('../users/users-model.js')
+const Users = require('../users/users-model.js');
+const gate = require('../auth/gate-middleware');
 
 router.post('/register', (req, res) => {
   let user = req.body;
@@ -27,7 +28,8 @@ router.post('/login', (req, res) => {
   Users.findBy({username}).first()
     .then(user => {
       if (user && bcrypt.compareSync(password, user.password)) {
-        res.status(201).json(user);
+        req.session.user = user;
+        res.status(201).json({message: `Bienvenido ${user.username}`});
       } else {
         res.status(401).json({error: 'You shall not pass!'});
       }
@@ -38,7 +40,7 @@ router.post('/login', (req, res) => {
 });
 
 
-router.get('/users', (req, res) => {
+router.get('/users', gate, (req, res) => {
   Users.all()
     .then(users => {
       res.status(201).json(users);
